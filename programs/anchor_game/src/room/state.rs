@@ -1,10 +1,10 @@
 use anchor_lang::prelude::*;
 
-pub const ESCROW_DEFAULT_SIZE: usize = 8 + 121;
-pub const ESCROW_PREFIX: &str = "state";
+pub const ROOM_DEFAULT_SIZE: usize = 24 + 32 + 32 + 32 + 8 + 8 + 1 ;
+pub const ROOM_PREFIX: &str = "state";
 
 #[account]
-pub struct EscrowState {
+pub struct RoomState {
     pub identifier: String,
     pub initializer_key: Pubkey,
     pub initializer_deposit_token_account: Pubkey,

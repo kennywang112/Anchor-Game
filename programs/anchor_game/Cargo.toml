@@ -18,3 +18,4 @@ default = []
 [dependencies]
 anchor-lang = { git = "https://github.com/coral-xyz/anchor.git", features = ["init-if-needed"]}
 anchor-spl = { git = "https://github.com/coral-xyz/anchor.git"}
+solana-program = "1.10.41"

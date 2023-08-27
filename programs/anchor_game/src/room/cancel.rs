@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{ CloseAccount, Mint, Token, TokenAccount, TransferChecked, transfer_checked, close_account};
-use crate::EscrowState;
+use crate::RoomState;
 
 #[derive(Accounts)]
 pub struct Cancel<'info> {
@@ -20,11 +20,11 @@ pub struct Cancel<'info> {
     pub initializer_deposit_token_account: Account<'info, TokenAccount>,
     #[account(
         mut,
-        constraint = escrow_state.initializer_key == *initializer.key,
-        constraint = escrow_state.initializer_deposit_token_account == *initializer_deposit_token_account.to_account_info().key,
+        constraint = room_state.initializer_key == *initializer.key,
+        constraint = room_state.initializer_deposit_token_account == *initializer_deposit_token_account.to_account_info().key,
         close = initializer
     )]
-    pub escrow_state: Box<Account<'info, EscrowState>>,
+    pub room_state: Box<Account<'info, RoomState>>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_program: Program<'info, Token>,
 }
@@ -59,14 +59,14 @@ pub fn handler(ctx: Context<Cancel>) -> Result<()> {
 
     let authority_seeds = &[
         &AUTHORITY_SEED[..],
-        &[ctx.accounts.escrow_state.vault_authority_bump],
+        &[ctx.accounts.room_state.vault_authority_bump],
     ];
 
     transfer_checked(
         ctx.accounts
             .into_transfer_to_initializer_context()
             .with_signer(&[&authority_seeds[..]]),
-        ctx.accounts.escrow_state.initializer_amount,
+        ctx.accounts.room_state.initializer_amount,
         ctx.accounts.mint.decimals,
     )?;
 

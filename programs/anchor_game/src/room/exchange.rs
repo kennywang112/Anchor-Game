@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, CloseAccount, Mint, Token, TokenAccount, TransferChecked};
-use crate::EscrowState;
+use crate::RoomState;
 
 #[derive(Accounts)]
 pub struct Exchange<'info> {
@@ -21,13 +21,14 @@ pub struct Exchange<'info> {
     pub initializer: AccountInfo<'info>,
     #[account(
         mut,
-        constraint = escrow_state.taker_amount <= taker_deposit_token_account.amount,
-        constraint = escrow_state.initializer_deposit_token_account == *initializer_deposit_token_account.to_account_info().key,
-        constraint = escrow_state.initializer_receive_token_account == *initializer_receive_token_account.to_account_info().key,
-        constraint = escrow_state.initializer_key == *initializer.key,
+        constraint = room_state.taker_amount <= taker_deposit_token_account.amount,
+        constraint = room_state.initializer_deposit_token_account == *initializer_deposit_token_account.to_account_info().key,
+        constraint = room_state.initializer_receive_token_account == *initializer_receive_token_account.to_account_info().key,
+        constraint = room_state.initializer_key == *initializer.key,
+
         close = initializer
     )]
-    pub escrow_state: Box<Account<'info, EscrowState>>,
+    pub room_state: Box<Account<'info, RoomState>>,
     #[account(mut)]
     pub vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: This is not dangerous because we don't read or write from this account
@@ -82,12 +83,12 @@ pub fn handler(
     
     let authority_seeds = &[
         &AUTHORITY_SEED[..],
-        &[ctx.accounts.escrow_state.vault_authority_bump],
+        &[ctx.accounts.room_state.vault_authority_bump],
     ];
 
     token::transfer_checked(
         ctx.accounts.into_transfer_to_initializer_context(),
-        ctx.accounts.escrow_state.taker_amount,
+        ctx.accounts.room_state.taker_amount,
         ctx.accounts.taker_deposit_token_mint.decimals,
     )?;
 
@@ -95,7 +96,7 @@ pub fn handler(
         ctx.accounts
             .into_transfer_to_taker_context()
             .with_signer(&[&authority_seeds[..]]),
-        ctx.accounts.escrow_state.initializer_amount,
+        ctx.accounts.room_state.initializer_amount,
         ctx.accounts.initializer_deposit_token_mint.decimals,
     )?;
 

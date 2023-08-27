@@ -1,19 +1,19 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
-use crate::ESCROW_DEFAULT_SIZE;
-use crate::EscrowState;
-use crate::ESCROW_PREFIX;
+use crate::ROOM_DEFAULT_SIZE;
+use crate::RoomState;
+use crate::ROOM_PREFIX;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct InitHouseIx {
+pub struct InitRoomIx {
     initializer_amount: u64,
     taker_amount: u64,
     identifier: String,
 }
 
 #[derive(Accounts)]
-#[instruction(ix: InitHouseIx)]
+#[instruction(ix: InitRoomIx)]
 pub struct InitializeCtx<'info> {
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
@@ -34,18 +34,19 @@ pub struct InitializeCtx<'info> {
     pub vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = initializer_deposit_token_account.amount >= ix.initializer_amount
+        constraint = initializer_deposit_token_account.amount >= ix.initializer_amount,
+        constraint = ix.initializer_amount == 50
     )]
     pub initializer_deposit_token_account: Account<'info, TokenAccount>,
     pub initializer_receive_token_account: Account<'info, TokenAccount>,
     #[account(
         init,
-        seeds =  [ESCROW_PREFIX.as_bytes(), ix.identifier.as_ref()],
+        seeds =  [ROOM_PREFIX.as_bytes(), ix.identifier.as_ref()],
         bump,
         payer = initializer,
-        space = ESCROW_DEFAULT_SIZE
+        space = ROOM_DEFAULT_SIZE
     )]
-    pub escrow_state: Box<Account<'info, EscrowState>>,
+    pub room_state: Box<Account<'info, RoomState>>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
@@ -53,8 +54,8 @@ pub struct InitializeCtx<'info> {
     pub token_program: Program<'info, Token>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub associated_token_program: Program<'info, AssociatedToken>,
-}
 
+}
 
 impl<'info> InitializeCtx<'info> {
     fn into_transfer_to_pda_context(
@@ -72,30 +73,31 @@ impl<'info> InitializeCtx<'info> {
 
 pub fn handler(
     ctx: Context<InitializeCtx>,
-    ix: InitHouseIx
+    ix: InitRoomIx
 ) -> Result<()> {
-    ctx.accounts.escrow_state.initializer_key = *ctx.accounts.initializer.key;
-    ctx.accounts.escrow_state.initializer_deposit_token_account = *ctx
+    ctx.accounts.room_state.initializer_key = *ctx.accounts.initializer.key;
+    ctx.accounts.room_state.initializer_deposit_token_account = *ctx
         .accounts
         .initializer_deposit_token_account
         .to_account_info()
         .key;
-    ctx.accounts.escrow_state.initializer_receive_token_account = *ctx
+    ctx.accounts.room_state.initializer_receive_token_account = *ctx
         .accounts
         .initializer_receive_token_account
         .to_account_info()
         .key;
-    ctx.accounts.escrow_state.initializer_amount = ix.initializer_amount;
-    ctx.accounts.escrow_state.taker_amount = ix.taker_amount;
-    ctx.accounts.escrow_state.identifier = ix.identifier;
+    // ctx.accounts.room_state.initializer_amount = ix.initializer_amount;
+    ctx.accounts.room_state.initializer_amount = ix.initializer_amount;
+    ctx.accounts.room_state.taker_amount = ix.taker_amount;
+    ctx.accounts.room_state.identifier = ix.identifier;
 
     let (_vault_authority, vault_authority_bump) =
         Pubkey::find_program_address(&[b"authority"], ctx.program_id);
-    ctx.accounts.escrow_state.vault_authority_bump = vault_authority_bump;
+    ctx.accounts.room_state.vault_authority_bump = vault_authority_bump;
 
     token::transfer_checked(
         ctx.accounts.into_transfer_to_pda_context(),
-        ctx.accounts.escrow_state.initializer_amount,
+        ctx.accounts.room_state.initializer_amount,
         ctx.accounts.mint.decimals,
     )?;
 
