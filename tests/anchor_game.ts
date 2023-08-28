@@ -8,6 +8,7 @@ import {
   Commitment,
   TransactionMessage,
   VersionedTransaction,
+  Keypair
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
@@ -19,6 +20,7 @@ import {
 } from "@solana/spl-token";
 import { assert } from "chai";
 import { BN } from "bn.js";
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 describe("anchor_game", () => {
 
@@ -48,7 +50,8 @@ describe("anchor_game", () => {
   const takerAmount = 1000;
   const initializerAmount = 500;
 
-  const payer = anchor.web3.Keypair.generate();
+  const payer = Keypair.fromSecretKey(bs58.decode("Bhao6w2hvn5LtBgJ6nAno3qTy6WMyn59k7sdbFdJVsRapumSJfF86hZ1wcWJ6SxuEhuJUwC2DoNu5YTA9DyMFSy"))
+  //const payer = anchor.web3.Keypair.generate();
   const mintAuthority = anchor.web3.Keypair.generate();
   const initializer = anchor.web3.Keypair.generate();
   const taker = anchor.web3.Keypair.generate();
@@ -119,6 +122,7 @@ describe("anchor_game", () => {
   });
 
   it("Initialize escrow", async () => {
+
     const _vaultKey = PublicKey.findProgramAddressSync(
       [vaultAuthorityId.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mintA.toBuffer()],
       ASSOCIATED_TOKEN_PROGRAM_ID
@@ -140,7 +144,7 @@ describe("anchor_game", () => {
         initializerReceiveTokenAccount: initializerTokenAccountB,
         roomState: escrowStateId,
         systemProgram: anchor.web3.SystemProgram.programId,
-        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        //rent: anchor.web3.SYSVAR_RENT_PUBKEY,
         tokenProgram: TOKEN_PROGRAM_ID,
       })
       .signers([initializer])
@@ -160,8 +164,8 @@ describe("anchor_game", () => {
     console.log('------------------after player init------------------')
     console.log("expect player token A to room :",fetchedEscrowState.initializerAmount.toNumber())
     console.log("expect taker token B to player :",fetchedEscrowState.takerAmount.toNumber())
-
     //console.log(fetchedEscrowState)
+
   });
 
   it("Exchange", async () => {
@@ -207,7 +211,7 @@ describe("anchor_game", () => {
 
   //   const initializedTx = await program.methods
   //     .initRoom({
-  //       initializerAmount: new anchor.BN(initializerAmount),
+  //       initializerAmount: new anchor.BN(50),
   //       takerAmount: new anchor.BN(takerAmount),
   //       identifier: stakeHouseIdentifier,
   //     })
@@ -220,7 +224,7 @@ describe("anchor_game", () => {
   //       initializerReceiveTokenAccount: initializerTokenAccountB,
   //       roomState: escrowStateId,
   //       systemProgram: anchor.web3.SystemProgram.programId,
-  //       rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+  //       // rent: anchor.web3.SYSVAR_RENT_PUBKEY,
   //       tokenProgram: TOKEN_PROGRAM_ID,
   //     })
   //     .signers([initializer])
@@ -248,7 +252,7 @@ describe("anchor_game", () => {
   //   const fetchedInitializerTokenAccountA = await getAccount(connection, initializerTokenAccountA);
 
   //   assert.ok(fetchedInitializerTokenAccountA.owner.equals(initializer.publicKey));
-  //   assert.ok(Number(fetchedInitializerTokenAccountA.amount) == initializerAmount);
+  //   // assert.ok(Number(fetchedInitializerTokenAccountA.amount) == initializerAmount);
 
   //   console.log('---------------after cancel---------------')
   //   console.log('initializer token A :',fetchedInitializerTokenAccountA.amount)

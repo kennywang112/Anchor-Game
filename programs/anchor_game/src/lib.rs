@@ -3,6 +3,7 @@ pub use room::*;
 
 use anchor_lang::prelude::*;
 
+pub mod errors;
 
 declare_id!("C6eqnSPN75gz2if2e8M3H7xdz4WUX7kPfnDbmHxG9Ri5");
 

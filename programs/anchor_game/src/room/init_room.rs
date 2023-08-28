@@ -1,9 +1,14 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
+use anchor_spl::metadata::MetadataAccount;
+use std::str::FromStr;
 use crate::ROOM_DEFAULT_SIZE;
 use crate::RoomState;
 use crate::ROOM_PREFIX;
+use crate::errors::Errors;
+
+pub use anchor_spl::metadata::mpl_token_metadata;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct InitRoomIx {
@@ -15,6 +20,19 @@ pub struct InitRoomIx {
 #[derive(Accounts)]
 #[instruction(ix: InitRoomIx)]
 pub struct InitializeCtx<'info> {
+    #[account(
+        seeds = [
+            b"metadata", 
+            mpl_token_metadata::ID.as_ref(), 
+            mint.key().as_ref()
+        ],
+        seeds::program = mpl_token_metadata::ID,
+        bump,
+        constraint = metadata_account.collection.as_ref().unwrap().verified @ Errors::CollectionNotVerified,
+        constraint = metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() @ Errors::CollectionNotSame
+    )]
+    pub metadata_account: Account<'info,MetadataAccount>,
+
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(mut)]
     pub initializer: Signer<'info>,
@@ -49,7 +67,7 @@ pub struct InitializeCtx<'info> {
     pub room_state: Box<Account<'info, RoomState>>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>,
+    //pub rent: Sysvar<'info, Rent>,
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub token_program: Program<'info, Token>,
     /// CHECK: This is not dangerous because we don't read or write from this account
