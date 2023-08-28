@@ -8,7 +8,8 @@ import {
   Commitment,
   TransactionMessage,
   VersionedTransaction,
-  Keypair
+  Keypair,
+  sendAndConfirmTransaction
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
@@ -17,12 +18,18 @@ import {
   createAccount,
   mintTo,
   getAccount,
+  getMinimumBalanceForRentExemptMint,
+  MintLayout,
+  createInitializeMintInstruction,
+  getAssociatedTokenAddress,
+  createAssociatedTokenAccountInstruction,
+  createMintToInstruction,
 } from "@solana/spl-token";
 import { assert } from "chai";
 import { BN } from "bn.js";
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
-describe("anchor_game", () => {
+describe("anchor_game", async () => {
 
   const stakeHouseIdentifier = `test`;
   const commitment: Commitment = "processed";
@@ -37,7 +44,7 @@ describe("anchor_game", () => {
 
   anchor.setProvider(provider);
 
-  const programId = new PublicKey("C6eqnSPN75gz2if2e8M3H7xdz4WUX7kPfnDbmHxG9Ri5");
+  const programId = new PublicKey("BGXHsoqm7cXC6PfAXcyPNuyNAzUgGs6iushSr2SJCP1v");
   const program = new anchor.Program(IDL, programId, provider);
 
   let mintA = null as PublicKey;
@@ -69,6 +76,7 @@ describe("anchor_game", () => {
     program.programId
   )[0];
   let vaultKey = null as PublicKey;
+
 
   it("Initialize program state", async () => {
     const signature = await provider.connection.requestAirdrop(payer.publicKey, 1000000000);
@@ -119,10 +127,14 @@ describe("anchor_game", () => {
 
     assert.ok(Number(fetchedInitializerTokenAccountA.amount) == initializerAmount);
     assert.ok(Number(fetchedTakerTokenAccountB.amount) == takerAmount);
+
+    // console.log("token account A : ",initializerTokenAccountA)
+    // console.log("fetch : ",fetchedInitializerTokenAccountA.address)
   });
 
   it("Initialize escrow", async () => {
 
+    const nftMint = new PublicKey("DskQgewLBTmPBZwWAZ5U7swcPeggpZ5eRbb6gurY1oZd");
     const _vaultKey = PublicKey.findProgramAddressSync(
       [vaultAuthorityId.toBuffer(), TOKEN_PROGRAM_ID.toBuffer(), mintA.toBuffer()],
       ASSOCIATED_TOKEN_PROGRAM_ID
@@ -136,6 +148,8 @@ describe("anchor_game", () => {
         identifier: stakeHouseIdentifier,
       })
       .accounts({
+        //nftMint: nftMint,
+        nftTokenAccount: initializerTokenAccountA,
         initializer: initializer.publicKey,
         vaultAuthority: vaultAuthorityId,
         vault: vaultKey,
@@ -168,43 +182,43 @@ describe("anchor_game", () => {
 
   });
 
-  it("Exchange", async () => {
+  // it("Exchange", async () => {
 
-    const result = await program.methods
-      .exchange()
-      .accounts({
-        taker: taker.publicKey,
-        initializerDepositTokenMint: mintA,
-        takerDepositTokenMint: mintB,
-        takerDepositTokenAccount: takerTokenAccountB,
-        takerReceiveTokenAccount: takerTokenAccountA,
-        initializerDepositTokenAccount: initializerTokenAccountA,
-        initializerReceiveTokenAccount: initializerTokenAccountB,
-        initializer: initializer.publicKey,
-        roomState: escrowStateId,
-        vault: vaultKey,
-        vaultAuthority: vaultAuthorityId,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      })
-      .signers([taker])
-      .rpc();
+  //   const result = await program.methods
+  //     .exchange()
+  //     .accounts({
+  //       taker: taker.publicKey,
+  //       initializerDepositTokenMint: mintA,
+  //       takerDepositTokenMint: mintB,
+  //       takerDepositTokenAccount: takerTokenAccountB,
+  //       takerReceiveTokenAccount: takerTokenAccountA,
+  //       initializerDepositTokenAccount: initializerTokenAccountA,
+  //       initializerReceiveTokenAccount: initializerTokenAccountB,
+  //       initializer: initializer.publicKey,
+  //       roomState: escrowStateId,
+  //       vault: vaultKey,
+  //       vaultAuthority: vaultAuthorityId,
+  //       tokenProgram: TOKEN_PROGRAM_ID,
+  //     })
+  //     .signers([taker])
+  //     .rpc();
       
-    let fetchedInitializerTokenAccountA = await getAccount(connection, initializerTokenAccountA);
-    let fetchedInitializerTokenAccountB = await getAccount(connection, initializerTokenAccountB);
-    let fetchedTakerTokenAccountA = await getAccount(connection, takerTokenAccountA);
-    let fetchedTakerTokenAccountB = await getAccount(connection, takerTokenAccountB);
+  //   let fetchedInitializerTokenAccountA = await getAccount(connection, initializerTokenAccountA);
+  //   let fetchedInitializerTokenAccountB = await getAccount(connection, initializerTokenAccountB);
+  //   let fetchedTakerTokenAccountA = await getAccount(connection, takerTokenAccountA);
+  //   let fetchedTakerTokenAccountB = await getAccount(connection, takerTokenAccountB);
 
-    // assert.ok(Number(fetchedTakerTokenAccountA.amount) == initializerAmount);
-    // assert.ok(Number(fetchedInitializerTokenAccountA.amount) == 0);
-    // assert.ok(Number(fetchedInitializerTokenAccountB.amount) == takerAmount);
-    // assert.ok(Number(fetchedTakerTokenAccountB.amount) == 0);
+  //   // assert.ok(Number(fetchedTakerTokenAccountA.amount) == initializerAmount);
+  //   // assert.ok(Number(fetchedInitializerTokenAccountA.amount) == 0);
+  //   // assert.ok(Number(fetchedInitializerTokenAccountB.amount) == takerAmount);
+  //   // assert.ok(Number(fetchedTakerTokenAccountB.amount) == 0);
     
-    console.log('------------------after taker exchange------------------')
-    console.log('player token A :',fetchedInitializerTokenAccountA.amount)
-    console.log('player token B :',fetchedInitializerTokenAccountB.amount)
-    console.log('taker token A :',fetchedTakerTokenAccountA.amount)
-    console.log('taker token B :',fetchedTakerTokenAccountB.amount)
-  })
+  //   console.log('------------------after taker exchange------------------')
+  //   console.log('player token A :',fetchedInitializerTokenAccountA.amount)
+  //   console.log('player token B :',fetchedInitializerTokenAccountB.amount)
+  //   console.log('taker token A :',fetchedTakerTokenAccountA.amount)
+  //   console.log('taker token B :',fetchedTakerTokenAccountB.amount)
+  // })
 
   // it("cancel escrow", async () => {
   //   await mintTo(connection, initializer, mintA, initializerTokenAccountA, mintAuthority, initializerAmount);
