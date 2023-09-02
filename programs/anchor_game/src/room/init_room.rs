@@ -7,7 +7,6 @@ use crate::ROOM_DEFAULT_SIZE;
 use crate::RoomState;
 use crate::ROOM_PREFIX;
 use crate::errors::Errors;
-
 pub use anchor_spl::metadata::mpl_token_metadata;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -34,13 +33,12 @@ pub struct InitializeCtx<'info> {
     pub nft_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
-        //has_one = initializer @ Errors::InvalidNFTOwner,
         constraint = nft_token_account.mint == nft_mint.key() @ Errors::InvalidNFTAccountMint,
         constraint = nft_token_account.amount == 1 @ Errors::NFTAccountEmpty,
         constraint = nft_token_account.owner == initializer.key()
     )]
     //strict collection nft owner
-    pub nft_token_account: Account<'info, TokenAccount>,
+    pub nft_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         seeds = [
@@ -51,12 +49,13 @@ pub struct InitializeCtx<'info> {
         seeds::program = mpl_token_metadata::ID,
         bump,
         constraint = metadata_account.collection.as_ref().unwrap().verified @ Errors::CollectionNotVerified,
-        constraint = metadata_account.collection.as_ref().unwrap().key ==
-        Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() @ Errors::CollectionNotSame
+        constraint = 
+        metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() ||  
+        metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("GWqTyimCmP7oFSP2uzxfAGWoCkv38sKPF6jkYEiFqJBz").unwrap() 
+        @ Errors::CollectionNotSame
     )]
     // strict the nft belongs to the collection
     pub metadata_account: Account<'info,MetadataAccount>,
-
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(
         seeds = [b"authority".as_ref()],
@@ -96,6 +95,7 @@ pub struct InitializeCtx<'info> {
 }
 
 impl<'info> InitializeCtx<'info> {
+
     fn into_transfer_to_pda_context(
         &self,
     ) -> CpiContext<'_, '_, '_, 'info, TransferChecked<'info>> {
@@ -113,6 +113,25 @@ pub fn handler(
     ctx: Context<InitializeCtx>,
     ix: InitRoomIx
 ) -> Result<()> {
+
+    if ctx.accounts.metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() {
+
+        let clock = Clock::get()?;
+        let random = clock.unix_timestamp % 10;
+
+        if random <= 2 {
+
+            ctx.accounts.room_state.taker_amount = ix.taker_amount.checked_mul(2).expect("Multiplication error");
+        }else {
+
+            ctx.accounts.room_state.taker_amount = ix.taker_amount;
+        }
+
+    }else {
+
+        ctx.accounts.room_state.taker_amount = ix.taker_amount;
+    }
+
     ctx.accounts.room_state.initializer_key = *ctx.accounts.initializer.key;
     ctx.accounts.room_state.initializer_deposit_token_account = *ctx
         .accounts
@@ -126,13 +145,8 @@ pub fn handler(
         .key;
     // ctx.accounts.room_state.initializer_amount = ix.initializer_amount;
     ctx.accounts.room_state.initializer_amount = ix.initializer_amount;
-    ctx.accounts.room_state.taker_amount = ix.taker_amount;
+    //ctx.accounts.room_state.taker_amount = ix.taker_amount;//.checked_mul(2).expect("Multiplication error");
     ctx.accounts.room_state.identifier = ix.identifier;
-    // ctx.accounts.room_state.nft_token_account = *ctx
-    //     .accounts
-    //     .nft_token_account
-    //     .to_account_info()
-    //     .key;
 
     let (_vault_authority, vault_authority_bump) =
         Pubkey::find_program_address(&[b"authority"], ctx.program_id);
@@ -145,4 +159,5 @@ pub fn handler(
     )?;
 
     Ok(())
+
 }

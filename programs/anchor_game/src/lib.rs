@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 
 pub mod errors;
 
-declare_id!("BGXHsoqm7cXC6PfAXcyPNuyNAzUgGs6iushSr2SJCP1v");
+declare_id!("34kGtvyQYq4qsv7XtBejcZo5ZGD652hFM81x7Gc4TToq");
 
 #[program]
 pub mod anchor_game {

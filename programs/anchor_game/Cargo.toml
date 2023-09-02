@@ -19,3 +19,4 @@ default = []
 anchor-lang = { git = "https://github.com/coral-xyz/anchor.git", features = ["init-if-needed"]}
 anchor-spl = { git = "https://github.com/coral-xyz/anchor.git", features = ["metadata"]}
 solana-program = "1.10.41"
+rand = "0.8.3"

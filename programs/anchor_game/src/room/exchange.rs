@@ -42,6 +42,7 @@ pub struct Exchange<'info> {
 }
 
 impl<'info> Exchange<'info> {
+
     fn into_transfer_to_initializer_context(
         &self,
     ) -> CpiContext<'_, '_, '_, 'info, TransferChecked<'info>> {
@@ -79,12 +80,15 @@ impl<'info> Exchange<'info> {
 pub fn handler(
     ctx: Context<Exchange>
 ) -> Result<()> {
+
     const AUTHORITY_SEED: &[u8] = b"authority";
     
     let authority_seeds = &[
         &AUTHORITY_SEED[..],
         &[ctx.accounts.room_state.vault_authority_bump],
     ];
+
+    
 
     token::transfer_checked(
         ctx.accounts.into_transfer_to_initializer_context(),
