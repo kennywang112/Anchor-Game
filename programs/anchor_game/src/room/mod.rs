@@ -10,3 +10,5 @@ pub use exchange::*;
 pub mod cancel;
 pub use cancel::*;
 
+pub mod lose_exchange;
+pub use lose_exchange::*;

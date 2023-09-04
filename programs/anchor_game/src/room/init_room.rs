@@ -1,12 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, TransferChecked};
-use anchor_spl::metadata::MetadataAccount;
-use std::str::FromStr;
+// use anchor_spl::metadata::MetadataAccount;
+// use std::str::FromStr;
 use crate::ROOM_DEFAULT_SIZE;
 use crate::RoomState;
 use crate::ROOM_PREFIX;
-use crate::errors::Errors;
+// use crate::errors::Errors;
 pub use anchor_spl::metadata::mpl_token_metadata;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -26,36 +26,37 @@ pub struct InitializeCtx<'info> {
 
     pub mint: Account<'info, Mint>,
 
-    /// The Mint of the NFT
-    #[account(
-        constraint = nft_mint.supply == 1 @ Errors::InvalidNFTMintSupply,
-    )]
-    pub nft_mint: Box<Account<'info, Mint>>,
-    #[account(
-        mut,
-        constraint = nft_token_account.mint == nft_mint.key() @ Errors::InvalidNFTAccountMint,
-        constraint = nft_token_account.amount == 1 @ Errors::NFTAccountEmpty,
-        constraint = nft_token_account.owner == initializer.key()
-    )]
-    //strict collection nft owner
-    pub nft_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(
-        mut,
-        seeds = [
-            b"metadata", 
-            mpl_token_metadata::ID.as_ref(), 
-            nft_mint.key().as_ref()
-        ],
-        seeds::program = mpl_token_metadata::ID,
-        bump,
-        constraint = metadata_account.collection.as_ref().unwrap().verified @ Errors::CollectionNotVerified,
-        constraint = 
-        metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() ||  
-        metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("GWqTyimCmP7oFSP2uzxfAGWoCkv38sKPF6jkYEiFqJBz").unwrap() 
-        @ Errors::CollectionNotSame
-    )]
-    // strict the nft belongs to the collection
-    pub metadata_account: Account<'info,MetadataAccount>,
+    // /// The Mint of the NFT
+    // #[account(
+    //     constraint = nft_mint.supply == 1 @ Errors::InvalidNFTMintSupply,
+    // )]
+    // pub nft_mint: Box<Account<'info, Mint>>,
+    // #[account(
+    //     mut,
+    //     constraint = nft_token_account.mint == nft_mint.key() @ Errors::InvalidNFTAccountMint,
+    //     constraint = nft_token_account.amount == 1 @ Errors::NFTAccountEmpty,
+    //     constraint = nft_token_account.owner == initializer.key()
+    // )]
+    // //strict collection nft owner
+    // pub nft_token_account: Box<Account<'info, TokenAccount>>,
+    // #[account(
+    //     mut,
+    //     seeds = [
+    //         b"metadata", 
+    //         mpl_token_metadata::ID.as_ref(), 
+    //         nft_mint.key().as_ref()
+    //     ],
+    //     seeds::program = mpl_token_metadata::ID,
+    //     bump,
+    //     constraint = metadata_account.collection.as_ref().unwrap().verified @ Errors::CollectionNotVerified,
+    //     constraint = 
+    //     metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() ||  
+    //     metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("GWqTyimCmP7oFSP2uzxfAGWoCkv38sKPF6jkYEiFqJBz").unwrap() 
+    //     @ Errors::CollectionNotSame
+    // )]
+    // // strict the nft belongs to the collection
+    // pub metadata_account: Account<'info,MetadataAccount>,
+
     /// CHECK: This is not dangerous because we don't read or write from this account
     #[account(
         seeds = [b"authority".as_ref()],
@@ -114,23 +115,23 @@ pub fn handler(
     ix: InitRoomIx
 ) -> Result<()> {
 
-    if ctx.accounts.metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() {
+    // if ctx.accounts.metadata_account.collection.as_ref().unwrap().key == Pubkey::from_str("8E8BHMvZiKq7q9xn1dw8rbZr7Vf2uPUdshaNU5mmFeZ8").unwrap() {
 
-        let clock = Clock::get()?;
-        let random = clock.unix_timestamp % 10;
+    //     let clock = Clock::get()?;
+    //     let random = clock.unix_timestamp % 10;
 
-        if random <= 2 {
+    //     if random <= 2 {
 
-            ctx.accounts.room_state.taker_amount = ix.taker_amount.checked_mul(2).expect("Multiplication error");
-        }else {
+    //         ctx.accounts.room_state.taker_amount = ix.taker_amount.checked_mul(2).expect("Multiplication error");
+    //     }else {
 
-            ctx.accounts.room_state.taker_amount = ix.taker_amount;
-        }
+    //         ctx.accounts.room_state.taker_amount = ix.taker_amount;
+    //     }
 
-    }else {
+    // }else {
 
-        ctx.accounts.room_state.taker_amount = ix.taker_amount;
-    }
+    //     ctx.accounts.room_state.taker_amount = ix.taker_amount;
+    // }
 
     ctx.accounts.room_state.initializer_key = *ctx.accounts.initializer.key;
     ctx.accounts.room_state.initializer_deposit_token_account = *ctx
@@ -145,7 +146,7 @@ pub fn handler(
         .key;
     // ctx.accounts.room_state.initializer_amount = ix.initializer_amount;
     ctx.accounts.room_state.initializer_amount = ix.initializer_amount;
-    //ctx.accounts.room_state.taker_amount = ix.taker_amount;//.checked_mul(2).expect("Multiplication error");
+    ctx.accounts.room_state.taker_amount = ix.taker_amount;//.checked_mul(2).expect("Multiplication error");
     ctx.accounts.room_state.identifier = ix.identifier;
 
     let (_vault_authority, vault_authority_bump) =

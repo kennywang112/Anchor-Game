@@ -3,7 +3,7 @@ use anchor_spl::token::{self, CloseAccount, Mint, Token, TokenAccount, TransferC
 use crate::RoomState;
 
 #[derive(Accounts)]
-pub struct Exchange<'info> {
+pub struct LoseExchange<'info> {
     /// CHECK: This is not dangerous because we don't read or write from this account
     pub taker: Signer<'info>,
     pub initializer_deposit_token_mint: Account<'info, Mint>,
@@ -41,7 +41,7 @@ pub struct Exchange<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> Exchange<'info> {
+impl<'info> LoseExchange<'info> {
 
     fn into_transfer_to_initializer_context(
         &self,
@@ -78,7 +78,7 @@ impl<'info> Exchange<'info> {
 }
 
 pub fn handler(
-    ctx: Context<Exchange>
+    ctx: Context<LoseExchange>
 ) -> Result<()> {
 
     const AUTHORITY_SEED: &[u8] = b"authority";
@@ -88,16 +88,16 @@ pub fn handler(
         &[ctx.accounts.room_state.vault_authority_bump],
     ];
 
+    //from taker to player
     token::transfer_checked(
         ctx.accounts.into_transfer_to_initializer_context(),
-        ctx.accounts.room_state.taker_amount,
+        ctx.accounts.room_state.taker_amount.checked_div(2).unwrap(),
         ctx.accounts.taker_deposit_token_mint.decimals,
     )?;
 
+    //from vault to taker
     token::transfer_checked(
-        ctx.accounts
-            .into_transfer_to_taker_context()
-            .with_signer(&[&authority_seeds[..]]),
+        ctx.accounts.into_transfer_to_taker_context().with_signer(&[&authority_seeds[..]]),
         ctx.accounts.room_state.initializer_amount,
         ctx.accounts.initializer_deposit_token_mint.decimals,
     )?;

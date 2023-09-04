@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 
 pub mod errors;
 
-declare_id!("34kGtvyQYq4qsv7XtBejcZo5ZGD652hFM81x7Gc4TToq");
+declare_id!("GrXPDYpqBzn4v6k399oWkph4qxB2YGbgCwa1Wgko1yKh");
 
 #[program]
 pub mod anchor_game {
@@ -21,6 +21,12 @@ pub mod anchor_game {
     pub fn exchange(ctx: Context<Exchange>) -> Result<()> {
         room::exchange::handler(ctx)
     }
+
+    /// lose exchange
+    pub fn loser(ctx: Context<LoseExchange>) -> Result<()> {
+        room::lose_exchange::handler(ctx)
+    }
+
 
     /// cancel
     pub fn cancel(ctx: Context<Cancel>) -> Result<()> {
